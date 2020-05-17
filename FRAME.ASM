@@ -9,12 +9,8 @@ locals @@
 		int 16h
 		endm
 
-;=================================================
+;========================================================
 VIDEOSEG equ 0b800h
-
-CMDSEG equ 81h
-
-IAP_STEP equ 3d
 
 WINDOW_WEIGHT equ 80d
 WINDOW_HEIGHT equ 25d
@@ -32,107 +28,89 @@ VERTICAL_FRAME equ 0BAh
 SPACE equ 20h
 
 TEXT_WEIGHT equ 19d
-TEXT_HEIGHT equ 1d
+TEXT_HEIGHT equ 1d	
+;========================================================
 
-; dh FRAME_WEIGHT equ 40d	
-; dl FRAME_HEIGHT equ 15d	
-
-; bh X equ 7d		
-; bl Y equ 7d		
-
-;=================================================
-
-Start:		call InAllParams    ; x, y, w, h		
-
-		mov si, offset Msg		
+Start:		mov si, offset Msg		
 		
 		mov di, VIDEOSEG		
 		mov es, di			
 
-		mov ah, COLOUR		
-		mov di, (bl * WINDOW_WEIGHT + bh) shl 1
+		mov ax, word ptr [Y]
+                mov bx, WINDOW_WEIGHT
+                mul bl
+                add ax, word ptr [X]
+                shl ax, 1
+		mov di, ax
 
+                mov al, SPACE
+		mov ah, COLOUR		
 		call DrawFrameWText		
 		
-		.getch				
+		.getch			
 
 		mov ax, 4C00h			
 		int 21h
 
-InAllParams	proc
-		mov cx, CMDSEG
-
-		jmp @@Start
-
-@@Next:		push dx
-
-@@Start:	call InParam
-		mov dh, al
-		add cx, IAP_STEP
-
-		call InParam
-		mov dl, al
-		add cx, IAP_STEP
-
-		cmp cx, CMDSEG + IAP_STEP * 4
-		jne @@Next
-
-		pop bx
-
-		ret
-		endp
-
-InParam		proc
-		mov bx, [cx]
-		sub bx, '00'		
-
-		mov al, 20d
-		mul bl
-
-		add al, bh
-		add al, bh
-
-		ret
-		endp
-
-;=================================================
+;========================================================
 ;Draw frame with text.
 ;Entry: AH - colour
 ;	DI - adress start of frame
 ;	ES - VIDEOSEG
 ;	SI - adress of Msg
 ;Exit: CX is ALWAYS 0
-;Destr: DI, SI, AL
+;Destr: DI, SI, AL, DX, BX
 ;========================================================
 DrawFrameWText	proc
 		mov al, TOP_LEFT_ANGLE
 		stosw
 
 		mov al, HORIZONTAL_FRAME
-		mov cx, dh - 2
+		mov cx, word ptr [FRAME_WEIGHT]
+                sub cx, 2
 		rep stosw
 
 		mov al, TOP_RIGHT_ANGLE
 		stosw
 		
-		mov cx, dl - 2	
-		call DrawBackground
-		add di, (WINDOW_WEIGHT - dh) shl 1
+		mov cx, word ptr [FRAME_HEIGHT]
+                sub cx, 2
+		call DrawFrameBack
+		mov dx, WINDOW_WEIGHT
+                sub dx, word ptr [FRAME_WEIGHT]
+                shl dx, 1
+                add di, dx
 
 		mov al, BOTTOM_LEFT_ANGLE
 		stosw
 
 		mov al, HORIZONTAL_FRAME
-		mov cx, dh - 2
+		mov cx, word ptr [FRAME_WEIGHT]
+                sub cx, 2
 		rep stosw
 
 		mov al, BOTTOM_RIGHT_ANGLE
 		stosw
 		
-		mov di, (bl + (dl - TEXT_HEIGHT) shr 1) * WINDOW_WEIGHT
-		add di, bh + (dh - TEXT_WEIGHT) shr 1
+                mov dx, ax
+                mov ax, word ptr [FRAME_HEIGHT]
+                sub ax, TEXT_HEIGHT
+                shr ax, 1
+                add ax, word ptr [Y]
+                mov bx, WINDOW_WEIGHT
+                mul bl
+		mov di, ax
+                
+                mov ax, word ptr [FRAME_WEIGHT]
+		sub ax, TEXT_WEIGHT
+                shr ax, 1
+                add ax, word ptr [X]
+                add di, ax
 		shl di, 1
-		mov cx, TEXT_WEIGHT 
+		
+                mov ax, dx
+
+                mov cx, TEXT_WEIGHT 
 		call WriteText
 		
 		ret
@@ -145,18 +123,22 @@ DrawFrameWText	proc
 ;	ES - VIDEOSEG
 ;	CX - count of lines
 ;Exit: CX is ALWAYS 0
-;Destr: DI, AL
+;Destr: DI, AL, DX
 ;========================================================
 DrawFrameBack	proc
 @@Next:		push cx
 	
-		add di, (WINDOW_WEIGHT - dh) shl 1
+                mov dx, WINDOW_WEIGHT
+                sub dx, word ptr [FRAME_WEIGHT]
+                shl dx, 1
+		add di, dx
 		
 		mov al, VERTICAL_FRAME
 		stosw
 
 		mov al, Space
-		mov cx, dh - 2
+		mov cx, word ptr [FRAME_WEIGHT]
+                sub cx, 2
 		rep stosw
 
 		mov al, VERTICAL_FRAME
@@ -183,8 +165,13 @@ WriteText	proc
 		inc si	
 		loop @@Next
 		ret
-		endp
-	
+		endp	
+
+X:		dw 7d		
+Y:		dw 7d 
+FRAME_WEIGHT:	dw 40d
+FRAME_HEIGHT:	dw 15d 
+
 Msg:		db 22h, 'Knowlege is power', 22h, '$'
 
 end 		Start  				
