@@ -10,10 +10,14 @@ int main()
 	in = fopen("vzlom(1).com", "rb+");
 	assert(in);
 	
-	int fseek_error = fseek(in, 0x23, SEEK_SET);
+	int pos = 0;
+	pos = 0x23;
+	int fseek_error = fseek(in, pos, SEEK_SET);
 	assert(fseek_error != -1);
 	
-	putc(0x74, in);
+	int symb = 0;
+	symb = 0x74;
+	putc(symb, in);
 	
 	fclose(in);
 	
