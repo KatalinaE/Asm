@@ -11,7 +11,7 @@ Start:		ret
 ;Entry: AL - character
 ;	CX - N
 ;	DI - pointer to the Data
-;Exit: BX - position of first occurrence
+;Exit:  BX - position of first occurrence
 ;Destr: DI, CX
 ;=================================================
 memchr 		proc
@@ -19,7 +19,6 @@ memchr 		proc
 		repne scasb		
 
 		xor bx, bx
-		
 		dec di
 		cmp byte ptr [di], al
 		je Founded
@@ -37,7 +36,7 @@ Founded:	mov bx, di
 ;Entry: CX - N
 ;	SI - pointer to the Data1
 ;	DI - pointer to the Data2
-;Exit: AX - answer
+;Exit:  AL - answer
 ;Destr: SI, DI, CX
 ;=================================================
 memcmp 		proc
