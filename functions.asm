@@ -41,6 +41,7 @@ Founded:	mov bx, di
 ;Destr: SI, DI, CX
 ;=================================================
 memcmp 		proc
+		xor ax, ax
 		cld
 		repe cmpsb
 		je Return
